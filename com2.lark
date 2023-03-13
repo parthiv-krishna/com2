@@ -1,0 +1,46 @@
+%import common.WS
+%ignore WS
+
+start: section+
+
+// identifiers
+?uppercase: "A".."Z"
+?lowercase: "a".."z"
+?digit: "0".."9"
+?letter: uppercase | lowercase
+id : letter (letter | digit)+
+
+
+// types
+type : id //("[" number "]")* ("[" "]")?
+
+// expressions
+unsigned_int : digit+
+signed_int : ["-"] unsigned_int+
+arith : "+" | "-" | "*" | "/"
+expr : id | signed_int | "(" expr ")" | expr arith expr | id "[" expr "]"
+
+// sections
+section: parameters | variables | states | functions
+parameters: "parameters" "{" declaration* "}"
+variables: "variables" "{" declaration* "}"
+states: "states" "{" state* "}"
+functions: "functions" "{" function* "}"
+
+declaration : type ":" id ";"
+
+state : [id ":"] state_actions transitions
+state_actions : "{" (wire_state | variable_assignment)* "}"
+wire_op : "->" | "<-"
+wire_state : id wire_op expr ";"
+variable_assignment : id "=" expr
+
+transitions : "[" transition* "]"
+transition : "(" id ":" expr ")" [":" cond_arm ("," cond_arm)* ] ";"
+cond_arm : [expr] "=>" id
+
+function: "fn" id "(" (param ("," param)*)? ")" "{" (stmt)* "}"
+param: id ":" io_type type
+io_type: "input" | "output"
+stmt: "p"
+
