@@ -31,17 +31,17 @@ class CodeGen(lark.visitors.Interpreter):
         super().__init__()
         self.side = side
 
-    def start(self, *sections):
+    def start(self, start):
         source = ""
-        for section_type in ("parameters", "variables", self.side):
-            for section in sections:
+        for section_type in ("parameters", "variables"):
+            for section in start.children:
                 if section.data == section_type:
                     source += self.visit(section) + "\n"
         return source
     
-    def parameters(declarations): 
-        return "\n".join(d.codegen() for d in declarations)
-    variables = source
+    def parameters(self, section):
+        return "\n".join(d.codegen() for d in section.children)
+    variables = parameters
 
 def main(file: str, grammar_file: str):
     params_dict = {"tx": 8, "baud": 115200}
@@ -57,11 +57,11 @@ def main(file: str, grammar_file: str):
     # print(vars_dict)
     
     print(ast.pretty())
+    print(CodeGen("functions").visit(ast))
 
-    
-     __name__ == "__main__":
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("file")
+    parser.add_argument("file", default="uart.com2")
     parser.add_argument("--grammar_file", default="com2.lark")
     args = parser.parse_args()
     main(args.file, args.grammar_file)

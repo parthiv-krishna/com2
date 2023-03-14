@@ -20,11 +20,12 @@ class Type(Ast):
         array_dims = ""
         c_type = ""
         if self.base_type == "bit":
-            first_dim = self.dims[0]
+            first_dim = int(self.dims[0])
             assert (first_dim <= 64)
             for bit_width in (8, 16, 32, 64):
                 if first_dim <= bit_width:
                     c_type = f"uint{bit_width}_t"
+                    break
 
             array_dims = "".join(f"[{d}]" for d in reversed(self.dims[1:]))
             
@@ -65,15 +66,16 @@ class State(Ast):
         self.duration = duration
         self.actions = actions
         self.transitions = transitions
-    
 
-class States(Ast):
-    def __init__(self, *states) -> None:
-        super().__init__()
+# class Function(Ast):
 
-        self.states = states
 
-    def __repr__(self):
-        return "\n".join(s for s in self.states)
+# class States(Ast):
+#     def __init__(self, *states) -> None:
+#         super().__init__()
 
-    
+#         self.states = states
+
+#     def __repr__(self):
+#         return "\n".join(str(s) for s in self.states)
+
