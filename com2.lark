@@ -1,46 +1,47 @@
 %import common.WS
+%import common.SH_COMMENT
 %ignore WS
+%ignore SH_COMMENT
 
 start: section+
 
 // identifiers
-?uppercase: "A".."Z"
-?lowercase: "a".."z"
-?digit: "0".."9"
-?letter: uppercase | lowercase
-id : letter (letter | digit)+
-
+ID: /[a-z_][a-z0-9_]*/i
 
 // types
-type : id //("[" number "]")* ("[" "]")?
+array_dim : "[" [INT] "]"
+type : ID array_dim*
 
 // expressions
-unsigned_int : digit+
-signed_int : ["-"] unsigned_int+
-arith : "+" | "-" | "*" | "/"
-expr : id | signed_int | "(" expr ")" | expr arith expr | id "[" expr "]"
+INT: /[0-9]+/
+ARITH_OP : "+" | "-" | "*" | "/"
+expr : ID | INT | "(" expr ")" | expr ARITH_OP expr | expr "[" expr "]"
+
 
 // sections
-section: parameters | variables | states | functions
-parameters: "parameters" "{" declaration* "}"
-variables: "variables" "{" declaration* "}"
+?section: parameters | variables | states | functions
+parameters: "parameters" "{"  (declaration ";")* "}"
+variables: "variables" "{" (declaration ";")* "}"
 states: "states" "{" state* "}"
 functions: "functions" "{" function* "}"
 
-declaration : type ":" id ";"
+declaration : type ID ["=" expr]
 
-state : [id ":"] state_actions transitions
-state_actions : "{" (wire_state | variable_assignment)* "}"
-wire_op : "->" | "<-"
-wire_state : id wire_op expr ";"
-variable_assignment : id "=" expr
 
-transitions : "[" transition* "]"
-transition : "(" id ":" expr ")" [":" cond_arm ("," cond_arm)* ] ";"
-cond_arm : [expr] "=>" id
+TIME_UNIT.1 : "s" | "ms" | "us" | "ns"
+duration : expr TIME_UNIT
+state : [ID ":"] "(" [duration] ")" "{" state_actions "}" [transitions]
+state_actions : (state_action ";")*
+?state_action : wire_state | variable_assignment
+WIRE_OP : "->" | "<-" | "==>" | "<=="
+wire_state : expr WIRE_OP expr
+variable_assignment : ID "=" expr
 
-function: "fn" id "(" (param ("," param)*)? ")" "{" (stmt)* "}"
-param: id ":" io_type type
-io_type: "input" | "output"
-stmt: "p"
+transitions :  "[" cond_arm ("," cond_arm)* "]"
+cond_arm : [expr] "=>" ID
 
+function: "fn" ID "(" (param ("," param)*)? ")" "{" (stmt ";")* "}"
+param: ID ":" IO_TYPE type
+IO_TYPE: "input" | "output"
+state_path : ID "..." ID
+?stmt: variable_assignment | state_path

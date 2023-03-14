@@ -1,0 +1,71 @@
+parameters {
+    wire tx;
+    integer baud;
+    integer bit_period = 1000000/baud;
+    # bit parity = 1;
+    integer stop_bits = 1;
+}
+
+variables {
+    bit[8][][] data;
+}
+
+states {
+    IDLE: (){
+        tx ==> 1;
+    }
+
+    START: (bit_period us){
+        tx ==> 0;   
+    }
+
+    (bit_period us){
+        tx -> data[0];
+    }
+
+    (bit_period us){
+        tx ->  data[1];
+    }
+    
+    (bit_period us){
+        tx ->  data[2];
+    }
+
+    (bit_period us){
+        tx ->  data[3];
+    }
+
+    (bit_period us){
+        tx ->  data[4];
+    }
+
+    (bit_period us){
+        tx ->  data[5];
+    }
+
+    (bit_period us){
+        tx ->  data[6];
+    }
+
+    (bit_period us){
+        tx ->  data[7];
+    }
+
+    STOP: (bit_period * stop_bits us){
+        tx -> 1;
+    }[=> IDLE]
+
+}
+
+functions {
+    fn send(x: output byte) {
+        data = x;
+        START...IDLE;
+    }
+
+
+    fn recv(x: input byte) {
+        IDLE...IDLE;
+        x = data;
+    }
+}
