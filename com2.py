@@ -1,58 +1,65 @@
 from argparse import ArgumentParser
 import lark
-from class_transformer import *
+import lark.ast_utils
+import com2_ast
+from com2_ast import *
 
-class State:
-    pass
+class AstTransformer(lark.Transformer):
+    expr = " ".join
 
-class Type:
-    dimensions: list[int]
+    def __init__(self, provided_params) -> None:
+        super().__init__()
+        self.provided_params = provided_params
 
-    def __init__(self, tree: lark.Tree):
-        pass
+    def subscript(self, children):
+        x = children[0]
+        x += "".join(f"[{i}]" for i in children[1:-1])
+        return f"(({x} >> ({children[-1]})) & 1)"
+    
+    @lark.v_args(inline=True)
+    def array_dim(self, dim):
+        return dim
+    
+    @lark.v_args(inline=True)
+    def param_declaration(self, ty, name, init):
+        if name.value in self.provided_params:
+            init = self.provided_params[name.value]
+        return ParamDeclaration(ty, name, init)
+    
+class CodeGen(lark.visitors.Interpreter):
+    def __init__(self, side) -> None:
+        super().__init__()
+        self.side = side
 
-def populate_parameters(defined_params, ast: lark.Tree):
-    params_dict = {}
-    param_sections = ast.find_data("parameters")
-    for param_section in param_sections:
-        declaration: DeclarationNode
-        for declaration in param_section.children:
-            name = declaration.name.value
-            init = declaration.init
-            if init is None:
-                init = defined_params[name]
-            params_dict[name] = init
-
-    return params_dict
-
-def create_variables(ast: lark.Tree):
-    vars_dict = {}
-    var_sections = ast.find_data("variables")
-    for var_section in var_sections:
-        declaration: DeclarationNode
-        for declaration in var_section.children:
-            vars_dict[declaration.name.value] = declaration.ty.children
-
-    return vars_dict
+    def start(self, *sections):
+        source = ""
+        for section_type in ("parameters", "variables", self.side):
+            for section in sections:
+                if section.data == section_type:
+                    source += self.visit(section) + "\n"
+        return source
+    
+    def parameters(declarations): 
+        return "\n".join(d.codegen() for d in declarations)
+    variables = source
 
 def main(file: str, grammar_file: str):
-    com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True, transformer=ToClassTransformer())
+    params_dict = {"tx": 8, "baud": 115200}
+    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(params_dict))
+    com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True, transformer=to_ast)
     with open(file, 'r') as f:
         ast = com2_parser.parse(f.read())
-        
-        tct = ToClassTransformer()
-        ast = tct.transform(ast)
 
-        params_dict = populate_parameters({"tx": 8, "baud": 115200}, ast)
-        print(params_dict)
+    # params_dict = populate_parameters({"tx": 8, "baud": 115200}, ast)
+    # print(params_dict)
 
-        vars_dict = create_variables(ast)
-        print(vars_dict)
-        
-            
+    # vars_dict = create_variables(ast)
+    # print(vars_dict)
     
+    print(ast.pretty())
 
-if __name__ == "__main__":
+    
+     __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("file")
     parser.add_argument("--grammar_file", default="com2.lark")

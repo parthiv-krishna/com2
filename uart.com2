@@ -7,7 +7,7 @@ parameters {
 }
 
 variables {
-    bit[8][][] data;
+    bit[8] data;
 }
 
 states {

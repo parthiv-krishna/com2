@@ -20,12 +20,13 @@ expr : ID | INT | "(" expr ")" | expr ARITH_OP expr | expr "[" expr "]"
 
 // sections
 ?section: parameters | variables | states | functions
-parameters: "parameters" "{"  (declaration ";")* "}"
-variables: "variables" "{" (declaration ";")* "}"
+parameters: "parameters" "{"  (param_declaration ";")* "}"
+variables: "variables" "{" (var_declaration ";")* "}"
 states: "states" "{" state* "}"
 functions: "functions" "{" function* "}"
 
-declaration : type ID ["=" expr]
+param_declaration : type ID ["=" expr]
+var_declaration : type ID
 
 
 TIME_UNIT.1 : "s" | "ms" | "us" | "ns"
