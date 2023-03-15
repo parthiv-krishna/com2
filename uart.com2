@@ -57,13 +57,14 @@ states {
 
 }
 
-functions {
+left {
     fn send(output byte x) {
         data = x;
         START...IDLE;
     }
+}
 
-
+right {
     fn recv(input byte x) {
         IDLE...IDLE;
         x = data;

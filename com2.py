@@ -13,16 +13,18 @@ class CompilerOptions:
 
     provider = ArduinoProvider()
 
-    codegen_side = com2_ast.Driver.LEFT
+    codegen_side = com2_ast.Driver.RIGHT
 
-COMPILER_OPTIONS = CompilerOptions()
+opts = CompilerOptions()
 
 class AstTransformer(lark.Transformer):
-    expr = " ".join
+    def expr(self, children):
+        return "".join(str(child) for child in children)
 
-    def __init__(self, compiler_options: CompilerOptions) -> None:
+    def __init__(self, opts: CompilerOptions) -> None:
         super().__init__()
-        self.provided_params = compiler_options.params_dict
+        self.provided_params = opts.params_dict
+        self.state_map = None
 
     def subscript(self, children):
         x = children[0]
@@ -51,30 +53,51 @@ class AstTransformer(lark.Transformer):
             if prev is not None:
                 prev.set_next(state.label)
             prev = state
-        return state_map
+        self.state_map = state_map
+        return lark.Discard
              
 class CodeGen(lark.visitors.Interpreter):
-    def __init__(self, side) -> None:
+    def __init__(self, opts: CompilerOptions, state_map) -> None:
         super().__init__()
-        self.side = side
+        self.opts = opts
+        self.state_map = state_map
 
     def start(self, start):
         source = ""
-        for section_type in ("parameters", "variables"):
+        fn_type = "left_functions" if self.opts.codegen_side == Driver.LEFT else "right_functions"
+        for section_type in ("parameters", "variables", fn_type):
             for section in start.children:
-                if section.data == section_type:
+                if isinstance(section, lark.Tree) and section.data == section_type:
                     source += self.visit(section) + "\n"
         return source
     
     def parameters(self, section):
-        return "\n".join(d.codegen(COMPILER_OPTIONS) for d in section.children)
+        return "\n".join(d.codegen(self.opts) for d in section.children)
     variables = parameters
 
-    def functions(self, section):
-        return "\n".join(f.codegen_source(COMPILER_OPTIONS) for f in section.children)
+    def left_functions(self, section):
+        return "\n".join(f.codegen_source(self.opts, self.state_map) for f in section.children)
+    right_functions = left_functions
 
-def main(file: str, grammar_file: str):
-    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(COMPILER_OPTIONS))
+class HeaderGen(lark.visitors.Interpreter):
+    def __init__(self, opts: CompilerOptions) -> None:
+        super().__init__()
+        self.opts = opts
+
+    def start(self, start):
+        source = ""
+        fn_type = "left_functions" if self.opts.codegen_side == Driver.LEFT else "right_functions"
+        for section in start.children:
+            if isinstance(section, lark.Tree) and section.data == fn_type:
+                source += self.visit(section) + "\n"
+        return source
+
+    def left_functions(self, section):
+        return "\n".join(f.codegen_header(self.opts) for f in section.children)
+    right_functions = left_functions  
+
+def main(file: str, grammar_file: str, output_prefix):
+    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(opts))
     com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True, transformer=to_ast)
     with open(file, 'r') as f:
         ast = com2_parser.parse(f.read())
@@ -85,12 +108,17 @@ def main(file: str, grammar_file: str):
     # vars_dict = create_variables(ast)
     # print(vars_dict)
     
-    print(ast.pretty())
-    print(CodeGen("functions").visit(ast))
+    # print(ast.pretty())
+    with open(f"{output_prefix}.h", 'w') as f:
+        f.write(HeaderGen(opts).visit(ast))
+    
+    with open(f"{output_prefix}.c", 'w') as f:
+        f.write(CodeGen(opts, to_ast.state_map).visit(ast))
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("file", default="uart.com2")
+    parser.add_argument("output_prefix", default="com2_uart")
     parser.add_argument("--grammar_file", default="com2.lark")
     args = parser.parse_args()
-    main(args.file, args.grammar_file)
+    main(args.file, args.grammar_file, args.output_prefix)

@@ -14,8 +14,10 @@ type : ID array_dim*
 
 // expressions
 INT: /[0-9]+/
-ARITH_OP : "+" | "-" | "*" | "/"
-expr : ID | INT | "(" expr ")" | expr ARITH_OP expr | expr "[" expr "]"
+ARITH_OP : "+" | "-" | "*" | "/" | "%" | "|" | "^" | "&" | "==" | "!="
+UNARY_OP : "!" | "~"
+expr : l_value | INT | "(" expr ")" | expr ARITH_OP expr | UNARY_OP expr
+l_value : ID ("[" expr "]")*
 
 
 // sections
@@ -23,7 +25,8 @@ expr : ID | INT | "(" expr ")" | expr ARITH_OP expr | expr "[" expr "]"
 parameters: "parameters" "{"  (param_declaration ";")* "}"
 variables: "variables" "{" (var_declaration ";")* "}"
 states: "states" "{" state* "}"
-functions: "functions" "{" function* "}"
+functions : "left"  "{" function* "}" -> left_functions
+          | "right" "{" function* "}" -> right_functions
 
 param_declaration : type ID ["=" expr]
 var_declaration : type ID
@@ -37,18 +40,18 @@ state : [ID ":"] "(" condition_list ")" "{" state_actions "}" [transitions]
 state_actions : (state_action ";")*
 ?state_action : wire_write | wire_read_write | variable_assignment
 
-!wire_read_write : id "==>" expr -> transfer_to_right
-                 | expr "<==" id -> transfer_to_left
-!wire_write : id "-->" expr -> send_to_right
-            | expr "<--" id -> send_to_left
-variable_assignment : ID "=" expr
+wire_read_write : ID "==>" l_value -> transfer_to_right
+                 | l_value "<==" ID -> transfer_to_left
+wire_write : ID "-->" expr -> send_to_right
+            | expr "<--" ID -> send_to_left
+variable_assignment : l_value "=" expr
 
 transitions :  "[" transition ("," transition)* "]"
 transition : [expr] "=>" ID
 
 function : "fn" ID "(" arg_list ")" "{" stmt_list "}"
-arg_list : (arg ("," arg)*)?
-arg : IO_TYPE type ID
+arg_list : (argument ("," argument)*)?
+argument : IO_TYPE type ID
 IO_TYPE.1 : "input" | "output"
 
 stmt_list : (stmt ";")*

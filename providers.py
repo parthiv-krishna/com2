@@ -28,7 +28,7 @@ class Provider(abc.ABC):
         pass
     
     @abc.abstractmethod
-    def codegen_wire_read_bit(self, wire_id: lark.Token, expr: str):
+    def codegen_wire_read_bit(self, wire_id: lark.Token):
         pass
 
 class ArduinoProvider(Provider):
@@ -42,10 +42,10 @@ class ArduinoProvider(Provider):
         return "int"
     
     def codegen_wire_set_mode(self, wire_id: lark.Token, mode: WireMode):
-        return f"pinMode({wire_id}, {mode})"
+        return f"pinMode({wire_id}, {mode.value})"
     
     def codegen_wire_write_bit(self, wire_id: lark.Token, expr: str):
         return f"digitalWrite({wire_id}, {expr})"
     
-    def codegen_wire_read_bit(self, wire_id: lark.Token, expr: str):
-        return f"{expr} = digitalRead({wire_id})"
+    def codegen_wire_read_bit(self, wire_id: lark.Token):
+        return f"digitalRead({wire_id})"
