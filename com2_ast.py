@@ -145,7 +145,7 @@ class Function(Ast):
                 source += stmt.codegen(opts, num, state_map)
                 source += f"{mangle_label(EXIT_LABEL, num)}:\n"
                 num += 1
-        source += "}"
+        source += "return;\n}\n"
 
         return source
     
