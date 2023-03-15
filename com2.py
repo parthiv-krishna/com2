@@ -3,13 +3,26 @@ import lark
 import lark.ast_utils
 import com2_ast
 from com2_ast import *
+from providers import *
+
+class CompilerOptions:
+    params_dict = {
+        "tx": 8, 
+        "baud": 115200
+    }
+
+    provider = ArduinoProvider()
+
+    codegen_side = com2_ast.Driver.LEFT
+
+COMPILER_OPTIONS = CompilerOptions()
 
 class AstTransformer(lark.Transformer):
     expr = " ".join
 
-    def __init__(self, provided_params) -> None:
+    def __init__(self, compiler_options: CompilerOptions) -> None:
         super().__init__()
-        self.provided_params = provided_params
+        self.provided_params = compiler_options.params_dict
 
     def subscript(self, children):
         x = children[0]
@@ -26,6 +39,20 @@ class AstTransformer(lark.Transformer):
             init = self.provided_params[name.value]
         return ParamDeclaration(ty, name, init)
     
+    def states(self, states: list[State]):
+        state_map = {}
+        anonymous_label_cnt = 0
+        prev = None
+        for state in states:
+            if state.label is None:
+                state.label = f"anonymous{anonymous_label_cnt}"
+                anonymous_label_cnt += 1
+            state_map[state.label] = state
+            if prev is not None:
+                prev.set_next(state.label)
+            prev = state
+        return state_map
+             
 class CodeGen(lark.visitors.Interpreter):
     def __init__(self, side) -> None:
         super().__init__()
@@ -40,12 +67,14 @@ class CodeGen(lark.visitors.Interpreter):
         return source
     
     def parameters(self, section):
-        return "\n".join(d.codegen() for d in section.children)
+        return "\n".join(d.codegen(COMPILER_OPTIONS) for d in section.children)
     variables = parameters
 
+    def functions(self, section):
+        return "\n".join(f.codegen_source(COMPILER_OPTIONS) for f in section.children)
+
 def main(file: str, grammar_file: str):
-    params_dict = {"tx": 8, "baud": 115200}
-    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(params_dict))
+    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(COMPILER_OPTIONS))
     com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True, transformer=to_ast)
     with open(file, 'r') as f:
         ast = com2_parser.parse(f.read())

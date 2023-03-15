@@ -11,60 +11,60 @@ variables {
 }
 
 states {
-    IDLE: (){
-        tx ==> 1;
+    IDLE: (tx){
+        tx --> 1;
     }
 
     START: (bit_period us){
-        tx ==> 0;   
+        tx --> 0;   
     }
 
     (bit_period us){
-        tx -> data[0];
+        tx ==> data[0];
     }
 
     (bit_period us){
-        tx ->  data[1];
+        tx ==>  data[1];
     }
     
     (bit_period us){
-        tx ->  data[2];
+        tx ==>  data[2];
     }
 
     (bit_period us){
-        tx ->  data[3];
+        tx ==>  data[3];
     }
 
     (bit_period us){
-        tx ->  data[4];
+        tx ==>  data[4];
     }
 
     (bit_period us){
-        tx ->  data[5];
+        tx ==>  data[5];
     }
 
     (bit_period us){
-        tx ->  data[6];
+        tx ==>  data[6];
     }
 
     (bit_period us){
-        tx ->  data[7];
+        tx ==>  data[7];
     }
 
     STOP: (bit_period * stop_bits us){
-        tx -> 1;
+        tx --> 1;
     }[=> IDLE]
 
 }
 
 functions {
-    fn send(x: output byte) {
+    fn send(output byte x) {
         data = x;
         START...IDLE;
     }
 
 
-    fn recv(x: input byte) {
+    fn recv(input byte x) {
         IDLE...IDLE;
         x = data;
     }
