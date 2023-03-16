@@ -29,6 +29,10 @@ class Substitute(lark.Transformer):
         if token == self.var:
             return self.val
         return token
+    
+    @lark.v_args(tree=True)
+    def LABEL(self, token):
+        return lark.Token(token.type, token.replace(self.var, self.val))
 
 
 class Preprocessor(lark.Transformer):
@@ -87,6 +91,7 @@ class AstTransformer(lark.Transformer):
             if state.label is None:
                 state.label = f"anonymous{anonymous_label_cnt}"
                 anonymous_label_cnt += 1
+            assert (state.label not in state_map)
             state_map[state.label] = state
             if prev is not None:
                 prev.set_next(state.label)

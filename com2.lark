@@ -40,7 +40,8 @@ TIME_UNIT.1 : "s" | "ms" | "us" | "ns"
 duration : expr TIME_UNIT
 ?condition : duration | ID
 condition_list : (condition ("," condition)*)?
-state : [ID ":"] "(" condition_list ")" "{" state_actions "}" [transitions]
+LABEL : ID (ID | PREPROC_ID)*
+state : [LABEL ":"] "(" condition_list ")" "{" state_actions "}" [transitions]
 state_actions : (state_action ";")*
 ?state_action : wire_write | wire_read_write | variable_assignment
 
@@ -60,4 +61,4 @@ IO_TYPE.1 : "input" | "output"
 
 stmt_list : (stmt ";")*
 ?stmt: variable_assignment | state_path
-state_path : ID "..." ID
+state_path : LABEL "..." LABEL

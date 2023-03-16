@@ -342,6 +342,3 @@ class State(Ast):
         if add_fallthrough and self.next_state_label is not None:
             code += f"goto {mangle_label(self.next_state_label, num)};\n"
         return code
-        
-            
-
