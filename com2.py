@@ -150,10 +150,15 @@ def main(opts: CompilerOptions, file: str, grammar_file: str, output_prefix):
     to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(opts))
     ast = to_ast.transform(ast)
 
-    with open(f"{output_prefix}.h", 'w') as f:
+    h_name = f"{output_prefix}.h"
+    cpp_name = f"{output_prefix}.c"
+    with open(h_name, 'w') as f:
+        f.write(opts.provider.header_header())
         f.write(HeaderGen(opts).visit(ast))
     
-    with open(f"{output_prefix}.c", 'w') as f:
+    with open(cpp_name, 'w') as f:
+        local_h_name = h_name.split("/")[-1]
+        f.write(f"#include \"{local_h_name}\"\n")
         f.write(CodeGen(opts, to_ast.state_map).visit(ast))
 
 if __name__ == "__main__":

@@ -31,6 +31,10 @@ class Provider(abc.ABC):
     def codegen_wire_read_bit(self, wire_id: lark.Token):
         pass
 
+    @abc.abstractmethod
+    def header_header(self):
+        pass
+
 class ArduinoProvider(Provider):
     def codegen_get_micros(self):
         return "micros()"
@@ -49,3 +53,9 @@ class ArduinoProvider(Provider):
     
     def codegen_wire_read_bit(self, wire_id: lark.Token):
         return f"digitalRead({wire_id})"
+
+    def header_header(self):
+        return """#include <Arduino.h>
+#include <stdint.h>
+
+"""
