@@ -19,36 +19,10 @@ states {
         tx --> 0;   
     }
 
-    (bit_period us){
-        tx ==> data[0];
-    }
-
-    (bit_period us){
-        tx ==>  data[1];
-    }
-    
-    (bit_period us){
-        tx ==>  data[2];
-    }
-
-    (bit_period us){
-        tx ==>  data[3];
-    }
-
-    (bit_period us){
-        tx ==>  data[4];
-    }
-
-    (bit_period us){
-        tx ==>  data[5];
-    }
-
-    (bit_period us){
-        tx ==>  data[6];
-    }
-
-    (bit_period us){
-        tx ==>  data[7];
+    for $i from 0 to 7 {
+        (bit_period us){
+            tx ==> data[$i];
+        }        
     }
 
     STOP: (bit_period * stop_bits us){
