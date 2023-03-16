@@ -11,7 +11,7 @@
             "program": "com2.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["uart.com2", "com2_uart"]
+            "args": ["uart.com2", "out/com2_uart"]
         }
     ]
 }

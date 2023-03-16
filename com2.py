@@ -14,26 +14,23 @@ class CompilerOptions:
 
     provider = ArduinoProvider()
 
-    codegen_side = com2_ast.Driver.RIGHT
+    codegen_side = com2_ast.Driver.LEFT
 
 opts = CompilerOptions()
 
 class Substitute(lark.Transformer):
     def __init__(self, substitution_var: lark.Token, substitution_val: int):
-        self.var = substitution_var.children[0].value
+        super().__init__(visit_tokens=True)
+        self.var = substitution_var
         self.val = lark.Token('INT', substitution_val)
 
-    @lark.v_args(inline=True)
-    def preprocess_id(self, tokens):
-        token = tokens[0]
+    @lark.v_args(tree=True)
+    def PREPROC_ID(self, token):
         if token == self.var:
             return self.val
-        return preproc_id
-
-    # def state()
+        return token
 
 class Preprocessor(lark.Transformer):
-
     @lark.v_args(inline=True)
     def for_loop(self, counter, start, stop, states):
         start = int(start)
@@ -41,14 +38,9 @@ class Preprocessor(lark.Transformer):
         result = []
         for curr in range(start, stop+1):
             sub = Substitute(counter, curr)
-            one_iter = copy.deepcopy(states.children)
-            for state in one_iter:
-
-                substituted = sub.transform(state)
-
-                result.append(substituted)
-
-        return result
+            substituted = sub.transform(states)
+            result.append(substituted)
+        return lark.Tree("state_list", result)
              
 
 class AstTransformer(lark.Transformer):
@@ -79,7 +71,7 @@ class AstTransformer(lark.Transformer):
         flat_list = []
         for child in children:
             if isinstance(child, list):
-                flat_list.extend(self.transform(c) for c in child)
+                flat_list.extend(child)
             else:
                 flat_list.append(child)
 
