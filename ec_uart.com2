@@ -31,7 +31,7 @@ states {
             tx ==> parity;
         }
         (bit_period us) {
-            resend = parity == (data[4 * $s] ^ data[4 * $s + 1] ^ data[4 * $s + 2] ^ data[4 * $s + 3]);
+            resend = parity != (data[4 * $s] ^ data[4 * $s + 1] ^ data[4 * $s + 2] ^ data[4 * $s + 3]);
             resend <== tx; 
         }[resend => BIT_$s_0]
     }
@@ -43,20 +43,20 @@ states {
 }
 
 shared {
-    fn ec_uart_init() {
+    fn com2_ec_uart_setup() {
         ...IDLE;
     }
 }
 
 left {
-    fn send(output byte x) {
+    fn com2_ec_uart_send(output byte x) {
         data = x;
         START...IDLE;
     }
 }
 
 right {
-    fn recv(input byte x) {
+    fn com2_ec_uart_recv(input byte x) {
         IDLE...IDLE;
         x = data;
     }
