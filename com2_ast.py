@@ -157,12 +157,15 @@ class VariableAssignment(Ast):
     def codegen(self, opts, deref=False):
         return self.var.codegen_assign(opts, self.expr, deref)
 
-@dataclass
 class StatePath(Ast):
-    start: lark.Token
-    end: lark.Token
+    def __init__(self, start, end) -> None:
+        super().__init__()
+        self.start = start and lark.Token('LABEL', start.value)
+        self.end = lark.Token('LABEL', end.value)
 
     def codegen(self, opts, num, state_map):
+        if self.start is None:
+            return state_map[self.end].codegen(opts, num, start=True, end=True)
         code = ""
         completed = set()
         start_state = state_map[self.start]

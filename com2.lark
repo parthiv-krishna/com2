@@ -29,8 +29,9 @@ states: "states" "{" state_list "}"
 state_list : state_block* -> state_list
 ?state_block : state | for_loop
 for_loop : "for" PREPROC_ID "from" INT "to" INT "{" state_list "}"
-functions : "left"  "{" function* "}" -> left_functions
-          | "right" "{" function* "}" -> right_functions
+functions : "left"   "{" function* "}" -> left_functions
+          | "right"  "{" function* "}" -> right_functions
+          | "shared" "{" function* "}" -> shared_functions
 
 param_declaration : type ID ["=" expr]
 var_declaration : type ID
@@ -52,7 +53,7 @@ wire_write : ID "-->" expr -> send_to_right
 variable_assignment : l_value "=" expr
 
 transitions :  "[" transition ("," transition)* "]"
-transition : [expr] "=>" ID
+transition : [expr] "=>" LABEL
 
 function : "fn" ID "(" arg_list ")" "{" stmt_list "}"
 arg_list : (argument ("," argument)*)?
@@ -61,4 +62,4 @@ IO_TYPE.1 : "input" | "output"
 
 stmt_list : (stmt ";")*
 ?stmt: variable_assignment | state_path
-state_path : LABEL "..." LABEL
+state_path : [ID] "..." ID

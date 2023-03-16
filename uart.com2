@@ -2,7 +2,6 @@ parameters {
     wire tx;
     integer baud;
     integer bit_period = 1000000/baud;
-    # bit parity = 1;
     integer stop_bits = 1;
 }
 
@@ -29,6 +28,12 @@ states {
         tx --> 1;
     }[=> IDLE]
 
+}
+
+shared {
+    fn init() {
+        ...IDLE;
+    }
 }
 
 left {

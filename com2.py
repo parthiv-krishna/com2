@@ -9,14 +9,13 @@ import copy
 class CompilerOptions:
     params_dict = {
         "tx": 8, 
-        "baud": 115200
+        "baud": 600
     }
 
     provider = ArduinoProvider()
 
-    codegen_side = com2_ast.Driver.LEFT
-
-opts = CompilerOptions()
+    def __init__(self, driver: Driver) -> None:
+        self.codegen_side = driver
 
 class Substitute(lark.Transformer):
     def __init__(self, substitution_var: lark.Token, substitution_val: int):
@@ -108,7 +107,7 @@ class CodeGen(lark.visitors.Interpreter):
     def start(self, start):
         source = ""
         fn_type = "left_functions" if self.opts.codegen_side == Driver.LEFT else "right_functions"
-        for section_type in ("parameters", "variables", fn_type):
+        for section_type in ("parameters", "variables", "shared_functions", fn_type):
             for section in start.children:
                 if isinstance(section, lark.Tree) and section.data == section_type:
                     source += self.visit(section) + "\n"
@@ -121,6 +120,7 @@ class CodeGen(lark.visitors.Interpreter):
     def left_functions(self, section):
         return "\n".join(f.codegen_source(self.opts, self.state_map) for f in section.children)
     right_functions = left_functions
+    shared_functions = left_functions
 
 class HeaderGen(lark.visitors.Interpreter):
     def __init__(self, opts: CompilerOptions) -> None:
@@ -139,7 +139,7 @@ class HeaderGen(lark.visitors.Interpreter):
         return "\n".join(f.codegen_header(self.opts) for f in section.children)
     right_functions = left_functions  
 
-def main(file: str, grammar_file: str, output_prefix):
+def main(opts: CompilerOptions, file: str, grammar_file: str, output_prefix):
     com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True)
     with open(file, 'r') as f:
         ast = com2_parser.parse(f.read())
@@ -161,5 +161,7 @@ if __name__ == "__main__":
     parser.add_argument("file", default="uart.com2")
     parser.add_argument("output_prefix", default="com2_uart")
     parser.add_argument("--grammar_file", default="com2.lark")
+    parser.add_argument("--driver", type=Driver, default=Driver.LEFT)
     args = parser.parse_args()
-    main(args.file, args.grammar_file, args.output_prefix)
+    opts = CompilerOptions(args.driver)
+    main(opts, args.file, args.grammar_file, args.output_prefix)

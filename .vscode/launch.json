@@ -11,7 +11,7 @@
             "program": "com2.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["double_for.com2", "out/df"]
+            "args": ["uart.com2", "out/uart_tx", "--driver=LEFT"]
         }
     ]
 }
