@@ -30,6 +30,7 @@ class Substitute(lark.Transformer):
             return self.val
         return token
 
+
 class Preprocessor(lark.Transformer):
     @lark.v_args(inline=True)
     def for_loop(self, counter, start, stop, states):
