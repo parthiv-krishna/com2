@@ -30,7 +30,12 @@ class Substitute(lark.Transformer):
             return self.val
         return preproc_id
 
-    # def state()
+    @lark.v_args(inline=True)
+    def state(self, label, cond_list, actions, transitions):
+        if label is not None:
+            label = f"{label}_{self.var}{self.val}"
+        children = [label, cond_list, actions, transitions]
+        return lark.Tree(lark.Token("RULE", "state"), children)
 
 class Preprocessor(lark.Transformer):
 
