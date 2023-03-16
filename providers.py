@@ -36,6 +36,10 @@ class Provider(abc.ABC):
         pass
 
 class ArduinoProvider(Provider):
+    def __init__(self, denominator=4) -> None:
+        super().__init__()
+        self.denominator = denominator
+
     def codegen_get_micros(self):
         return "micros()"
     
@@ -59,3 +63,7 @@ class ArduinoProvider(Provider):
 #include <stdint.h>
 
 """
+
+class NoisyArduinoProvider(ArduinoProvider):
+    def codegen_wire_write_bit(self, wire_id: lark.Token, expr: str):
+        return f"digitalWrite({wire_id}, (!!({expr})) ^ (random({self.denominator})==0))"

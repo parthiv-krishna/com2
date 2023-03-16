@@ -201,7 +201,7 @@ class _Transfer(_WireAction):
     def codegen(self, opts):
         if opts.codegen_side == self.DRIVER:
             write = opts.provider.codegen_wire_write_bit(self.wire, self.val)
-            return f"{write};"
+            return f"{write};\n"
 
         read = opts.provider.codegen_wire_read_bit(self.wire)
         return self.val.codegen_assign(opts, read)
@@ -283,7 +283,7 @@ class State(Ast):
             if isinstance(action, VariableAssignment) or action.DRIVER == opts.codegen_side:
                 if isinstance(action, _WireAction):
                     code += f"{opts.provider.codegen_wire_set_mode(action.wire, WireMode.Output)};\n"
-                code += action.codegen(opts) + "\n"
+                code += action.codegen(opts)
             elif action.wire in self.conds:
                 assert (action.ACTION == WireActionType.SEND)
                 code += f"{opts.provider.codegen_wire_set_mode(action.wire, WireMode.Input)};\n"

@@ -13,6 +13,7 @@ class CompilerOptions:
     }
 
     provider = ArduinoProvider()
+    # provider = NoisyArduinoProvider(64)
 
     def __init__(self, driver: Driver) -> None:
         self.codegen_side = driver
