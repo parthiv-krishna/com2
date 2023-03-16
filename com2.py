@@ -4,6 +4,7 @@ import lark.ast_utils
 import com2_ast
 from com2_ast import *
 from providers import *
+import copy
 
 class CompilerOptions:
     params_dict = {
@@ -16,6 +17,39 @@ class CompilerOptions:
     codegen_side = com2_ast.Driver.RIGHT
 
 opts = CompilerOptions()
+
+class Substitute(lark.Transformer):
+    def __init__(self, substitution_var: lark.Token, substitution_val: int):
+        self.var = substitution_var.children[0].value
+        self.val = lark.Token('INT', substitution_val)
+
+    @lark.v_args(inline=True)
+    def preprocess_id(self, tokens):
+        preproc_id = tokens[0]
+        if preproc_id == self.var:
+            return self.val
+        return preproc_id
+
+    # def state()
+
+class Preprocessor(lark.Transformer):
+
+    @lark.v_args(inline=True)
+    def for_loop(self, counter, start, stop, states):
+        start = int(start)
+        stop = int(stop)
+        result = []
+        for curr in range(start, stop+1):
+            sub = Substitute(counter, curr)
+            one_iter = copy.deepcopy(states.children)
+            for state in one_iter:
+
+                substituted = sub.transform(state)
+
+                result.append(substituted)
+
+        return result
+             
 
 class AstTransformer(lark.Transformer):
     def expr(self, children):
@@ -41,6 +75,17 @@ class AstTransformer(lark.Transformer):
             init = self.provided_params[name.value]
         return ParamDeclaration(ty, name, init)
     
+    def state_list(self, children):
+        flat_list = []
+        for child in children:
+            if isinstance(child, list):
+                flat_list.extend(self.transform(c) for c in child)
+            else:
+                flat_list.append(child)
+
+        return flat_list
+
+    @lark.v_args(inline=True)
     def states(self, states: list[State]):
         state_map = {}
         anonymous_label_cnt = 0
@@ -97,18 +142,16 @@ class HeaderGen(lark.visitors.Interpreter):
     right_functions = left_functions  
 
 def main(file: str, grammar_file: str, output_prefix):
-    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(opts))
-    com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True, transformer=to_ast)
+    com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True)
     with open(file, 'r') as f:
         ast = com2_parser.parse(f.read())
 
-    # params_dict = populate_parameters({"tx": 8, "baud": 115200}, ast)
-    # print(params_dict)
-
-    # vars_dict = create_variables(ast)
-    # print(vars_dict)
+    preproc = Preprocessor()
+    ast = preproc.transform(ast)
     
-    # print(ast.pretty())
+    to_ast = lark.ast_utils.create_transformer(com2_ast, AstTransformer(opts))
+    ast = to_ast.transform(ast)
+
     with open(f"{output_prefix}.h", 'w') as f:
         f.write(HeaderGen(opts).visit(ast))
     

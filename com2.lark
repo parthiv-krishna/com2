@@ -7,7 +7,7 @@ start: section+
 
 // identifiers
 ID: /[a-z_][a-z0-9_]*/i
-PREPROCESS_ID : "$" ID
+preprocess_id : "$" ID
 
 // types
 array_dim : "[" [INT] "]"
@@ -17,7 +17,7 @@ type : ID array_dim*
 INT: /[0-9]+/
 ARITH_OP : "+" | "-" | "*" | "/" | "%" | "|" | "^" | "&" | "==" | "!="
 UNARY_OP : "!" | "~"
-expr : l_value | INT | "(" expr ")" | expr ARITH_OP expr | UNARY_OP expr | PREPROCESS_ID
+expr : l_value | INT | "(" expr ")" | expr ARITH_OP expr | UNARY_OP expr | preprocess_id
 l_value : ID ("[" expr "]")*
 
 
@@ -25,9 +25,10 @@ l_value : ID ("[" expr "]")*
 ?section: parameters | variables | states | functions
 parameters: "parameters" "{"  (param_declaration ";")* "}"
 variables: "variables" "{" (var_declaration ";")* "}"
-states: "states" "{" state_block* "}"
+states: "states" "{" state_list "}"
+state_list : state_block*
 ?state_block : state | for_loop
-for_loop : "for" PREPROCESS_ID "in" INT "to" INT "{" state_block* "}"
+for_loop : "for" preprocess_id "from" INT "to" INT "{" state_list "}"
 functions : "left"  "{" function* "}" -> left_functions
           | "right" "{" function* "}" -> right_functions
 
