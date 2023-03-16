@@ -80,7 +80,7 @@ class ParamDeclaration:
 
     def codegen(self, opts):
         assert(self.init is not None)
-        return f"const {self.ty.codegen(opts, self.name)} = {self.init};"
+        return f"#define {self.name} ({self.init})"
 
 @dataclass
 class VarDeclaration(Ast):
