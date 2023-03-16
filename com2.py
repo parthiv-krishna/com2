@@ -9,7 +9,7 @@ import copy
 class CompilerOptions:
     params_dict = {
         "tx": 8, 
-        "baud": 600
+        "baud": 600,
     }
 
     provider = ArduinoProvider()

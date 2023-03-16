@@ -1,0 +1,63 @@
+parameters {
+    wire tx;
+    integer baud;
+    integer bit_period = 1000000/baud;
+    integer stop_bits = 1;
+}
+
+variables {
+    byte data;
+    bit resend;
+    bit parity;
+}
+
+states {
+    IDLE: (tx){
+        tx --> 1;
+    }
+
+    START: (bit_period us){
+        tx --> 0;   
+    }
+
+    for $s from 0 to 1 {
+        for $i from 0 to 3 {
+            BIT_$s_$i: (bit_period us){
+                tx ==> data[4 * $s + $i];
+            }
+        }
+        (bit_period us) {
+            parity = data[4 * $s] ^ data[4 * $s + 1] ^ data[4 * $s + 2] ^ data[4 * $s + 3]; 
+            tx ==> parity;
+        }
+        (bit_period us) {
+            resend = parity == (data[4 * $s] ^ data[4 * $s + 1] ^ data[4 * $s + 2] ^ data[4 * $s + 3]);
+            resend <== tx; 
+        }[resend => BIT_$s_0]
+    }
+
+    STOP: (bit_period * stop_bits us){
+        tx --> 1;
+    }[=> IDLE]
+
+}
+
+shared {
+    fn ec_uart_init() {
+        ...IDLE;
+    }
+}
+
+left {
+    fn send(output byte x) {
+        data = x;
+        START...IDLE;
+    }
+}
+
+right {
+    fn recv(input byte x) {
+        IDLE...IDLE;
+        x = data;
+    }
+}

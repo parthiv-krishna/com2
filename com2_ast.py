@@ -31,7 +31,7 @@ class Type(Ast):
         array_dims = ""
         c_type = ""
         if self.base_type == "bit":
-            first_dim = int(self.dims[0])
+            first_dim = int(self.dims[0]) if len(self.dims) > 0 else 1
             assert (first_dim <= 64)
             for bit_width in (8, 16, 32, 64):
                 if first_dim <= bit_width:
@@ -281,7 +281,8 @@ class State(Ast):
         assertions = []
         for action in self.actions:
             if isinstance(action, VariableAssignment) or action.DRIVER == opts.codegen_side:
-                code += f"{opts.provider.codegen_wire_set_mode(action.wire, WireMode.Output)};\n"
+                if isinstance(action, _WireAction):
+                    code += f"{opts.provider.codegen_wire_set_mode(action.wire, WireMode.Output)};\n"
                 code += action.codegen(opts) + "\n"
             elif action.wire in self.conds:
                 assert (action.ACTION == WireActionType.SEND)
