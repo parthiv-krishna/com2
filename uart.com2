@@ -31,20 +31,20 @@ states {
 }
 
 shared {
-    fn uart_init() {
+    fn com2_uart_setup() {
         ...IDLE;
     }
 }
 
 left {
-    fn uart_send(output byte x) {
+    fn com2_uart_send(output byte x) {
         data = x;
         START...IDLE;
     }
 }
 
 right {
-    fn uart_recv(input byte x) {
+    fn com2_uart_recv(input byte x) {
         IDLE...IDLE;
         x = data;
     }

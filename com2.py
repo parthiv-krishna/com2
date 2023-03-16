@@ -132,13 +132,15 @@ class HeaderGen(lark.visitors.Interpreter):
         source = ""
         fn_type = "left_functions" if self.opts.codegen_side == Driver.LEFT else "right_functions"
         for section in start.children:
-            if isinstance(section, lark.Tree) and section.data == fn_type:
+            if isinstance(section, lark.Tree) and section.data in [fn_type, "shared_functions"]:
                 source += self.visit(section) + "\n"
         return source
 
     def left_functions(self, section):
+        print("headergen")
         return "\n".join(f.codegen_header(self.opts) for f in section.children)
     right_functions = left_functions  
+    shared_functions = left_functions
 
 def main(opts: CompilerOptions, file: str, grammar_file: str, output_prefix):
     com2_parser = lark.Lark.open(grammar_file, rel_to=__file__, parser="lalr", debug=True)

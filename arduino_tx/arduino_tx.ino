@@ -9,10 +9,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  char *data = "hello com2!";
-  while (*data) {
-    com2_uart_send(*data);
-    data++;
+  char *str = "hello com2!\n";
+  while (*str) {
+    com2_uart_send(*str);
+    str++;
   }
   Serial.println("sent");
+  delay(1000);
 }
